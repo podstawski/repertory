@@ -1,0 +1,56 @@
+* {
+    font-family: Lato;
+}
+
+.main .query {
+    text-align: center;
+}
+
+.main .query input {
+    width: 50%;
+    margin-top: 15%;
+}
+
+.header .query input {
+    width: 90%;
+    margin: 15px;
+}
+
+.query input {
+    font-size: 1.3em;
+    padding: 0.7em;
+    outline: none;
+    background-position: right;
+    background-repeat: no-repeat;
+    border: 1px solid #a0a0a0;
+    border-radius: 2px;
+    transition: all 0.5s ease-in-out;
+}
+
+.blank {
+    display: none;
+}
+
+.results .rc {
+    font-size: 2em;
+    text-align: center;
+    padding-top:0.4em;
+}
+
+.results .rubric {
+    padding: 0.5em 5em;
+}
+
+.results .rubric .pl {
+    font-size: 1.7em;
+}
+.results .rubric .en {
+    font-size: 1.1em;
+}
+
+.results .even {
+    background-color: beige;
+}
+.results .odd {
+    background-color: azure;
+}
