@@ -1,0 +1,5 @@
+{
+    "db.dsn":"mysql:unix_socket=/cloudsql/jemyrazem:repertory;charset=utf8;dbname=repertory",
+    "db.user":"kiedymsza",
+    "db.pass":"crucemtuam"
+}
