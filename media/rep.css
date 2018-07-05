@@ -12,8 +12,8 @@
 }
 
 .header .query input {
-    width: 90%;
-    margin: 15px;
+    width: 94%;
+    margin: 15px 10px;
 }
 
 .header. navi {
@@ -21,8 +21,9 @@
 }
 
 .header .navi .case {
-    margin-top: 1.3em;
+    margin-top: 0.7em;
     float: right;
+    cursor: pointer;
 }
 
 .header .navi .case div {
@@ -30,7 +31,7 @@
     height: 3em;
     border: 1px solid #a0a0a0;
     text-align: center;
-    margin-right: 0.6em;
+    margin-right: 0.7em;
     border-radius: 50%;
     font-size: 1.2em;
     padding-top: 0.65em;
@@ -95,4 +96,71 @@
 }
 .results .odd {
     background-color: azure;
+}
+
+div.repertory {
+    width: 100%;
+    overflow: auto;
+    padding: 10px;
+}
+
+table.repertory {
+    border: 0;
+}
+
+table.repertory th {
+    white-space: nowrap;
+    height: 110px;
+    border: 0 !important;
+}
+
+table.repertory th div {
+    font-size: 0.7em;
+    transform: translate(10px, 82px) rotate(315deg);
+    width: 10px;
+}
+
+table.repertory th > div > span {
+    border-bottom: 1px solid #ccc;
+    padding: 5px 10px;
+}
+
+table.repertory td {
+    white-space: nowrap;
+}
+
+table.repertory td.score,table.repertory td.weight {
+    font-size: 0.7em;
+}
+
+table.repertory td div.pl {
+    font-size: 0.8em;
+}
+
+table.repertory #casename {
+    outline: none;
+    width: 100%;
+    border: 1px solid #a0a0a0;
+    padding: 0.6em;
+    margin-top: 2em;
+}
+
+table.repertory td.score4 {
+    background-color: darkblue;
+}
+
+table.repertory td.score3 {
+    background-color: blue;
+}
+
+table.repertory td.score2 {
+    background-color: cornflowerblue;
+}
+
+table.repertory td.score1 {
+    background-color: aquamarine;
+}
+
+table.repertory td.score0 {
+    background-color: white;
 }

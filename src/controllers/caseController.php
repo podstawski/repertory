@@ -19,9 +19,9 @@ class caseController extends Controller {
             $c['short']='';
             if ($c['name']) {
                 $name=explode(' ',$c['name']);
-                $c['short'] = mb_strtolower(mb_substr($name[0],0,1,'utf-8'),'utf-8');
+                $c['short'] = mb_strtoupper(mb_substr($name[0],0,1,'utf-8'),'utf-8');
                 if (count($name)>1)
-                    $c['short'].= mb_strtolower(mb_substr($name[1],0,1,'utf-8'),'utf-8');
+                    $c['short'].= mb_strtoupper(mb_substr($name[1],0,1,'utf-8'),'utf-8');
             }
 
         }
@@ -55,6 +55,19 @@ class caseController extends Controller {
         }
         $this->_set_active($this->id);
     }
+
+    public function post_name() {
+        if ($this->id && $this->_getParam('name')) {
+            $case = new casesModel($this->id);
+            if (!$this->checkRight($case))
+                return array('status'=>false,'message'=>'No right');
+            $case->lastActivity = time();
+            $case->name = $this->_getParam('name');
+            $case->save();
+        }
+        $this->_set_active($this->id);
+    }
+
 
     public function post() {
 
@@ -104,6 +117,65 @@ class caseController extends Controller {
     }
 
 
+    public function get_repertorize() {
+        $case = new casesModel($this->id);
+        if (!$this->checkRight($case))
+            return array('status'=>false,'message'=>'No right');
+
+        $case->lastActivity = time();
+        $case->save();
+        $this->_set_active($this->id);
+        $caser= new caserModel();
+        $caser->join('rubric','rubrics');
+        $rubrics = $caser->select(['case'=>$case->id],'`id`');
+
+        $rr=new rrModel();
+        $rr->join('remedy','remedies');
+        $all = [];
+        foreach ($rubrics AS &$rubric) {
+
+            $rubric['remedies']=[];
+            if (!$rubric['rc']) continue;
+
+            $token='rubric-'.$rubric['rubric'];
+            $remedies = Tools::memcache($token);
+            if (!$remedies) $remedies = Tools::memcache($token,$rr->select(['rubric'=>$rubric['rubric']]));
+            if (!$remedies) continue;
+            foreach ($remedies AS $remedy) {
+                $remedy_id = $remedy['remedy'];
+                if (!isset($all[$remedy_id])) {
+                    $all[$remedy_id] = $remedy;
+                    $all[$remedy_id]['points']=0;
+                    $all[$remedy_id]['rubrics']=[];
+                }
+                $all[$remedy_id]['points']+=$remedy['weight'] * $rubric['weight'];
+                $all[$remedy_id]['rubrics'][$rubric['rubric']] = $remedy['weight'];
+            }
+        }
+
+        usort($all,function($a,$b){
+            if ($a['points']==$b['points']) return 0;
+            return $a['points']>$b['points'] ? -1 : 1;
+        });
+
+        $all_remedies = [];
+        foreach ($all as $r) {
+            $all_remedies[] = ['name'=>$r['name'],'score'=>$r['points']];
+        }
+
+        foreach ($rubrics AS &$rubric) {
+            $rubric['remedies'] = [];
+            $id=$rubric['rubric'];
+
+            foreach ($all as $r) {
+                $rubric['remedies'][] = isset($r['rubrics'][$id]) ? $r['rubrics'][$id] : 0;
+            }
+
+        }
+
+        $ret=['remedies'=>$all_remedies, 'rubrics'=>$rubrics, 'case'=>$case->data()];
+        return array('status'=>true,'data'=>$ret);
+    }
 
     
 }

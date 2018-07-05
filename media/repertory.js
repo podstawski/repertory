@@ -3,6 +3,21 @@ const background="url(\"data:image/svg+xml;utf8," +
     "<text x='1' y='20' fill='rgb(150,150,150)' font-size='20'>COUNT</text>" +
     "</svg>\")";
 
+var html_width=0;
+
+const clean=function(cb){
+    $('.results').fadeOut(1000,function () {
+        $('.results').html('').show();
+        if (cb) cb();
+    });
+
+    $('table.repertory').fadeOut(1000,function () {
+        $('table.repertory').html('').show();
+        html_width=$('html').width();
+    });
+
+    mvqInput2header();
+}
 
 const getCases = function (cb) {
     $.getJSON('case?limit=4',function(cases){
@@ -10,42 +25,52 @@ const getCases = function (cb) {
 
         for (var i=cases.data.length-1;i>=0; i--) {
             var a=cases.data[i].active?' class="active"':'';
-            $('<div case="'+cases.data[i].id+'" class="case"><div'+a+'>'+cases.data[i].short+'</div><label>'+cases.data[i].rubrics+'</label></div>').appendTo($('.header .navi'));
+            $('<div case="'+cases.data[i].id+'" class="case" title="'+(cases.data[i].name||'brak nazwy przypadku')+'"><div'+a+'>'+cases.data[i].short+'</div><label>'+cases.data[i].rubrics+'</label></div>').appendTo($('.header .navi'));
         }
         if (cb) cb();
     })
 }
 
+const pushHistory = function(qs) {
+    var url=window.location.href;
+    var question=url.indexOf('?');
+    if (question>0) url=url.substr(0,question);
+    window.history.pushState({},"", url+'?'+qs);
+}
 
-$(function(){
-    document.getElementById('q').focus();
-    getCases();
+const mvqInput2header = function(q) {
+    if (!q) q=$('#q');
+    if (q.closest('.header').length==0) {
+        q.appendTo($('.header .query'));
+        setTimeout(function(){
+            $('.query input').focus();
+        },100);
 
+    }
+}
 
-    var status='waiting';
-    getData = function(e,q) {
-        if(!q) q=$(this);
+var status='waiting';
+const getSearchResults = function(e,q) {
+    if(!q) q=$(this);
 
-        if(q.val().length<3) return;
+    if(q.val().length<3) return;
 
-        if (
-            status=='getting' && typeof e=='object'
-            ||
-            status=='pending' && typeof e=='boolean'
-        ) {
-            setTimeout(getData,100,true,q);
-            status='pending';
-            return;
-        }
+    if (
+        status=='getting' && typeof e=='object'
+        ||
+        status=='pending' && typeof e=='boolean'
+    ) {
+        setTimeout(getSearchResults,100,true,q);
+        status='pending';
+        return;
+    }
 
-        if (status!='waiting') return;
+    if (status!='waiting') return;
 
-        var url=window.location.href;
-        var question=url.indexOf('?');
-        if (question>0) url=url.substr(0,question);
-        window.history.pushState({},"", url+'?q='+q.val());
+    pushHistory('q='+q.val());
 
-        status='getting';
+    status='getting';
+    clean(function(){
         $.getJSON('./rubric?q='+q.val(),function(data){
 
 
@@ -58,13 +83,7 @@ $(function(){
             $('.results').html('');
             if (data.data && data.data.results) {
 
-                if (q.closest('.header').length==0) {
-                    q.appendTo($('.header .query'));
-                    setTimeout(function(){
-                        $('.query input').focus();
-                    },1000);
-
-                }
+                mvqInput2header(q);
 
                 var i=0;
 
@@ -87,38 +106,24 @@ $(function(){
 
 
         })
-    }
+    });
+}
 
-    $('#q').keyup(getData);
-    $('#q').change(getData);
-
-
-
-
-
-
-    var url = new URL(window.location.href);
-    var q = url.searchParams.get("q");
-
-    if(q) {
-        $('#q').val(q);
-        $('#q').trigger('keyup');
-    }
-
-
-
-});
-
-
-$(document).on('click', '.results .rubric div', function(e) {
+const addRubricToCase = function(e) {
     const total_animation_time = 5000;
     const start=Date.now();
     const element = $(this).closest('.row');
     const id=element.attr('id');
     const body = $('html, body');
-    var destination={width:1, height: '10em', top: '3em', right: '2em','border-radius':'50%'};
+
+    var destination={width:1, height: element.height()*1.5, top: '3em', right: '2em','border-radius':'50%'};
     element.removeClass('row').addClass('animate').animate(destination,total_animation_time);
     element.find('*').fadeOut(total_animation_time);
+    var i=0;
+    $('.results .row').each(function(){
+        const evenodd = (i++)%2==0?'odd':'even';
+        $(this).removeClass('odd').removeClass('even').addClass(evenodd);
+    });
     body.animate({scrollTop:0}, total_animation_time);
     $.post('case',{rubric:id},function(data){
         getCases(function(){
@@ -149,10 +154,96 @@ $(document).on('click', '.results .rubric div', function(e) {
 
                     if (c3>0) setTimeout(fade,1/step);
                 }
-                setTimeout(fade,1000);
+                setTimeout(fade,500);
             });
 
         });
 
     });
+}
+
+
+const displayCase = function(e,caseId) {
+    clean();
+    if (!caseId) {
+        caseId=$(this).attr('case');
+        if ($(this).find('.active').length==1 && $('table.repertory').html().length>0) {
+            const active=$(this).find('.active');
+            $.post('case/active',function(){
+                active.removeClass('active');
+            });
+            return;
+        }
+
+    }
+    $.getJSON('case/repertorize/'+caseId,function(rep){
+        pushHistory('c='+caseId);
+        getCases();
+        const data=rep.data;
+
+        var tr='<tr><th colspan="2"><input id="casename" case="'+data.case.id+'" placeholder="Nazwa przypadku" value="'+(data.case.name?data.case.name:'')+'"/></th>';
+        for(var i=0; i<data.remedies.length; i++) {
+            tr+='<th><div><span>'+data.remedies[i].name+'</span></div></th>';
+        }
+        tr+='</tr>';
+        $('table.repertory').append(tr);
+
+        tr='<tr><td colspan="2"></td>';
+        for(var i=0; i<data.remedies.length; i++) {
+            tr+='<td class="score">'+data.remedies[i].score+'</td>';
+        }
+        tr+='</tr>';
+        $('table.repertory').append(tr);
+
+
+        for (var i=0;i<data.rubrics.length; i++) {
+            tr='<tr>';
+            tr+='<td><div class="pl" title="'+data.rubrics[i].en+'">'+data.rubrics[i].pl+'</div></td>';
+            tr+='<td class="weight">'+data.rubrics[i].weight+'</td>';
+
+            for (var j=0; j<data.rubrics[i].remedies.length; j++) {
+                tr+='<td class="score'+data.rubrics[i].remedies[j]+'">'+'</td>';
+            }
+            tr+='</tr>';
+            $('table.repertory').append(tr);
+
+        }
+
+        $('div.repertory').width(html_width-20);
+
+    });
+}
+
+const changeCaseName = function(e) {
+    if (e.type=='keyup' && e.keyCode!=13) return;
+    $.post('case/name/'+$(this).attr('case'),{name:$(this).val()});
+}
+
+$(function(){
+    document.getElementById('q').focus();
+    getCases();
+
+    $('#q').keyup(getSearchResults);
+    $('#q').click(getSearchResults);
+
+
+
+    var url = new URL(window.location.href);
+    var q = url.searchParams.get("q");
+    var c = url.searchParams.get("c");
+    if(q) {
+        $('#q').val(q);
+        $('#q').trigger('keyup');
+    }
+
+    if (c) displayCase(null,c);
+
+
+
 });
+
+
+$(document).on('click', '.results .rubric div', addRubricToCase);
+$(document).on('click', '.header .navi .case', displayCase);
+$(document).on('change', '#casename', changeCaseName);
+$(document).on('keyup', '#casename', changeCaseName);
