@@ -39,6 +39,7 @@
 
 .results .rubric {
     padding: 0.5em 5em;
+    cursor: pointer;
 }
 
 .results .rubric .pl {

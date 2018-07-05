@@ -87,3 +87,10 @@ $(function(){
         $('#q').trigger('keyup');
     }
 });
+
+
+$(document).on('click', '.results .rubric div', function(e) {
+    $.post('case',{rubric:$(this).closest('.row').attr('id')},function(data){
+        console.log(data);
+    });
+});

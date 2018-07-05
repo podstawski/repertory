@@ -10,4 +10,10 @@ class Bootstrap extends Bootstrapbase {
     }
 
 
+    public function getCurrentUser() {
+        $email = 'piotr.webkameleon.com';
+
+        return md5(str_replace('.','',strtolower($email)));
+    }
+
 }
