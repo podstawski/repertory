@@ -4,11 +4,29 @@ class caseController extends Controller {
 
     public function get()
     {
+        $case = new casesModel();
+        $cases = $case->select(['user32'=>Bootstrap::$main->getCurrentUser()],'lastActivity DESC', $this->_getParam('limit',0));
+        $caser = new caserModel();
 
+        if (count($cases)>0) {
+            if (time()-$cases[0]['lastActivity'] < 1800 ) {
+                $this->_set_active($cases[0]['id']);
+            }
+        }
+        foreach ($cases AS &$c) {
+            $c['rubrics'] = $caser->count(['case'=>$c['id']]);
+            $c['active'] = $c['id']==$this->_get_active();
+            $c['short']='';
+            if ($c['name']) {
+                $name=explode(' ',$c['name']);
+                $c['short'] = mb_strtolower(mb_substr($name[0],0,1,'utf-8'),'utf-8');
+                if (count($name)>1)
+                    $c['short'].= mb_strtolower(mb_substr($name[1],0,1,'utf-8'),'utf-8');
+            }
 
+        }
 
-
-        return array('status'=>true,'data'=>Tools::memcache($token,$result));
+        return array('status'=>true,'data'=>$cases);
   
     }
 
@@ -28,6 +46,13 @@ class caseController extends Controller {
 
 
     public function post_active() {
+        if ($this->id) {
+            $case = new casesModel($this->id);
+            if (!$this->checkRight($case))
+                return array('status'=>false,'message'=>'No right');
+            $case->lastActivity = time();
+            $case->save();
+        }
         $this->_set_active($this->id);
     }
 

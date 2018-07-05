@@ -16,6 +16,47 @@
     margin: 15px;
 }
 
+.header. navi {
+    text-align: right;
+}
+
+.header .navi .case {
+    margin-top: 1.3em;
+    float: right;
+}
+
+.header .navi .case div {
+    width: 3em;
+    height: 3em;
+    border: 1px solid #a0a0a0;
+    text-align: center;
+    margin-right: 0.6em;
+    border-radius: 50%;
+    font-size: 1.2em;
+    padding-top: 0.65em;
+}
+
+.header .navi .case label {
+    display: inline;
+    position: relative;
+    top: -2.2em;
+    left: 3.7em;
+    font-size: 0.6em;
+    color: red;
+}
+
+.header .navi .case div.active {
+    border-width: 3px;
+    border-color: aqua;
+}
+
+.results .animate {
+    border: solid 3px;
+    border-color: aqua;
+    position: absolute;
+    width:100%;
+}
+
 .query input {
     font-size: 1.3em;
     padding: 0.7em;
@@ -50,7 +91,7 @@
 }
 
 .results .even {
-    background-color: beige;
+    background-color: aquamarine;
 }
 .results .odd {
     background-color: azure;
