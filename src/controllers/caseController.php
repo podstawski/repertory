@@ -44,6 +44,34 @@ class caseController extends Controller {
         return Bootstrap::$main->session('active_case');
     }
 
+    public function delete() {
+        if ($this->id) {
+            $case = new casesModel($this->id);
+            if (!$this->checkRight($case))
+                return array('status'=>false,'message'=>'No right');
+            $case->remove();
+            return array('status'=>true);
+        }
+    }
+
+
+    public function delete_rubric() {
+        if ($this->id) {
+            $id=explode(',',$this->id);
+            $case = new casesModel($id[0]);
+            if (!$this->checkRight($case))
+                return array('status'=>false,'message'=>'No right');
+            $caser = new caserModel();
+            $r=$caser->select(['case'=>$id[0],'rubric'=>$id[1]]);
+            if ($r && count($r)>0) {
+                $caser->remove($r[0]['id']);
+                return array('status'=>true);
+            }
+            return array('status'=>false);
+
+        }
+    }
+
 
     public function post_active() {
         if ($this->id) {

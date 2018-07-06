@@ -3,6 +3,8 @@ const background="url(\"data:image/svg+xml;utf8," +
     "<text x='1' y='20' fill='rgb(150,150,150)' font-size='20'>COUNT</text>" +
     "</svg>\")";
 
+const NO_NAME_CASE = 'brak nazwy przypadku';
+
 var html_width=0;
 
 const clean=function(cb){
@@ -20,15 +22,15 @@ const clean=function(cb){
 }
 
 const getCases = function (cb) {
-    $.getJSON('case?limit=4',function(cases){
-        $('.header .navi').html('');
+    $.getJSON('case?limit=5',function(cases){
+        $('.header .navi').html('<div class="more">&hellip;</div>');
 
         for (var i=cases.data.length-1;i>=0; i--) {
             var a=cases.data[i].active?' class="active"':'';
-            $('<div case="'+cases.data[i].id+'" class="case" title="'+(cases.data[i].name||'brak nazwy przypadku')+'"><div'+a+'>'+cases.data[i].short+'</div><label>'+cases.data[i].rubrics+'</label></div>').appendTo($('.header .navi'));
+            $('<div case="'+cases.data[i].id+'" class="case" title="'+(cases.data[i].name||NO_NAME_CASE)+'"><div'+a+'>'+cases.data[i].short+'</div><label>'+cases.data[i].rubrics+'</label></div>').appendTo($('.header .navi'));
         }
         if (cb) cb();
-    })
+    });
 }
 
 const pushHistory = function(qs) {
@@ -162,9 +164,13 @@ const addRubricToCase = function(e) {
     });
 }
 
+var lastCaseId = 0;
 
 const displayCase = function(e,caseId) {
     clean();
+    if (caseId) lastCaseId=caseId;
+    else caseId=lastCaseId;
+
     if (!caseId) {
         caseId=$(this).attr('case');
         if ($(this).find('.active').length==1 && $('table.repertory').html().length>0) {
@@ -197,8 +203,10 @@ const displayCase = function(e,caseId) {
 
 
         for (var i=0;i<data.rubrics.length; i++) {
-            tr='<tr>';
-            tr+='<td><div class="pl" title="'+data.rubrics[i].en+'">'+data.rubrics[i].pl+'</div></td>';
+            tr='<tr class="row">';
+            var a='<a data-toggle="modal" data-cb="displayCase" data-target="#confirm-delete" data-header="Rubryka" data-href="deleteRubric" data-id="'+caseId+','+data.rubrics[i].rubric+'" href="" class="x">x</a>';
+
+            tr+='<td>'+a+'<div class="pl confirm-text" title="'+data.rubrics[i].en+'">'+data.rubrics[i].pl+'</div></td>';
             tr+='<td class="weight">'+data.rubrics[i].weight+'</td>';
 
             for (var j=0; j<data.rubrics[i].remedies.length; j++) {
@@ -217,6 +225,51 @@ const displayCase = function(e,caseId) {
 const changeCaseName = function(e) {
     if (e.type=='keyup' && e.keyCode!=13) return;
     $.post('case/name/'+$(this).attr('case'),{name:$(this).val()});
+}
+
+const displayAllCases = function (e) {
+    clean(function () {
+        $.getJSON('case',function(cases){
+
+            for (var i=0;i<cases.data.length; i++) {
+                var eo=(i%2)==0?'odd':'even';
+                var html='<div case="'+cases.data[i].id+'" class="row '+eo+'">';
+                html+='<div class="case confirm-text col-md-10">'+(cases.data[i].name||NO_NAME_CASE)+'</div>';
+                html+='<div class="rubrics col-md-1">'+cases.data[i].rubrics+'</div>';
+                html+='<div title="usuń" class="x col-md-1">';
+                html+='<a data-toggle="modal" data-cb="refreshCases" data-target="#confirm-delete" data-header="Przypadek" data-href="deleteCase" data-id="'+cases.data[i].id+'" href="">x</a>';
+                html+='</div></div>';
+                $(html).appendTo($('.results'));
+            }
+
+        });
+    });
+
+}
+
+const refreshCases = function(){
+    displayAllCases();
+    getCases();
+}
+
+const deleteCase = function(caseId,cb) {
+    $.ajax({
+        url: 'case/'+caseId,
+        type: 'DELETE',
+        success: function(){
+            $('#confirm-delete').fadeOut(cb);
+        }
+    });
+}
+
+const deleteRubric = function (caseId, rubricId, cb) {
+    $.ajax({
+        url: 'case/rubric/'+caseId+','+rubricId,
+        type: 'DELETE',
+        success: function(){
+            $('#confirm-delete').fadeOut(cb);
+        }
+    });
 }
 
 $(function(){
@@ -239,6 +292,12 @@ $(function(){
     if (c) displayCase(null,c);
 
 
+    $('#confirm-delete').on('show.bs.modal', function(e) {
+        var self=$(this);
+        self.find('.modal-header').text($(e.relatedTarget).attr('data-header'));
+        self.find('.modal-body').text($(e.relatedTarget).closest('.row').find('.confirm-text').text());
+        self.find('.btn-ok').attr('href', 'javascript:'+$(e.relatedTarget).data('href')+'('+$(e.relatedTarget).data('id')+','+$(e.relatedTarget).data('cb')+')');
+    });
 
 });
 
@@ -247,3 +306,4 @@ $(document).on('click', '.results .rubric div', addRubricToCase);
 $(document).on('click', '.header .navi .case', displayCase);
 $(document).on('change', '#casename', changeCaseName);
 $(document).on('keyup', '#casename', changeCaseName);
+$(document).on('click', '.header .navi .more', displayAllCases);
