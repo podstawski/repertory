@@ -52,6 +52,7 @@ const mvqInput2header = function(q) {
 }
 
 var status='waiting';
+var lastQ='';
 const getSearchResults = function(e,q) {
     if(!q) q=$(this);
 
@@ -71,10 +72,13 @@ const getSearchResults = function(e,q) {
 
     pushHistory('q='+q.val());
 
+    if(lastQ==q.val()) {
+        status='waiting';
+        return;
+    }
     status='getting';
     clean(function(){
         $.getJSON('./rubric?q='+q.val(),function(data){
-
 
             var count='0';
             if (data.data && data.data.total) {
@@ -168,10 +172,8 @@ var lastCaseId = 0;
 
 const displayCase = function(e,caseId) {
     clean();
-    if (caseId) lastCaseId=caseId;
-    else caseId=lastCaseId;
 
-    if (!caseId) {
+    if (!caseId && this && $(this).length && $(this).length>0) {
         caseId=$(this).attr('case');
         if ($(this).find('.active').length==1 && $('table.repertory').html().length>0) {
             const active=$(this).find('.active');
@@ -180,8 +182,11 @@ const displayCase = function(e,caseId) {
             });
             return;
         }
-
     }
+
+    if (caseId) lastCaseId=caseId;
+    else caseId=lastCaseId;
+
     $.getJSON('case/repertorize/'+caseId,function(rep){
         pushHistory('c='+caseId);
         getCases();
@@ -203,7 +208,7 @@ const displayCase = function(e,caseId) {
 
 
         for (var i=0;i<data.rubrics.length; i++) {
-            tr='<tr class="row">';
+            tr='<tr class="data-row">';
             var a='<a data-toggle="modal" data-cb="displayCase" data-target="#confirm-delete" data-header="Rubryka" data-href="deleteRubric" data-id="'+caseId+','+data.rubrics[i].rubric+'" href="" class="x">x</a>';
 
             tr+='<td>'+a+'<div class="pl confirm-text" title="'+data.rubrics[i].en+'">'+data.rubrics[i].pl+'</div></td>';
@@ -233,7 +238,7 @@ const displayAllCases = function (e) {
 
             for (var i=0;i<cases.data.length; i++) {
                 var eo=(i%2)==0?'odd':'even';
-                var html='<div case="'+cases.data[i].id+'" class="row '+eo+'">';
+                var html='<div case="'+cases.data[i].id+'" class="data-row row '+eo+'">';
                 html+='<div class="case confirm-text col-md-10">'+(cases.data[i].name||NO_NAME_CASE)+'</div>';
                 html+='<div class="rubrics col-md-1">'+cases.data[i].rubrics+'</div>';
                 html+='<div title="usuń" class="x col-md-1">';
@@ -295,7 +300,7 @@ $(function(){
     $('#confirm-delete').on('show.bs.modal', function(e) {
         var self=$(this);
         self.find('.modal-header').text($(e.relatedTarget).attr('data-header'));
-        self.find('.modal-body').text($(e.relatedTarget).closest('.row').find('.confirm-text').text());
+        self.find('.modal-body').text($(e.relatedTarget).closest('.data-row').find('.confirm-text').text());
         self.find('.btn-ok').attr('href', 'javascript:'+$(e.relatedTarget).data('href')+'('+$(e.relatedTarget).data('id')+','+$(e.relatedTarget).data('cb')+')');
     });
 

@@ -4,7 +4,7 @@ class caseController extends Controller {
 
     public function get()
     {
-        $case = new casesModel();
+        $case = new caseModel();
         $cases = $case->select(['user32'=>Bootstrap::$main->getCurrentUser()],'lastActivity DESC', $this->_getParam('limit',0));
         $caser = new caserModel();
 
@@ -46,7 +46,7 @@ class caseController extends Controller {
 
     public function delete() {
         if ($this->id) {
-            $case = new casesModel($this->id);
+            $case = new caseModel($this->id);
             if (!$this->checkRight($case))
                 return array('status'=>false,'message'=>'No right');
             $case->remove();
@@ -58,7 +58,7 @@ class caseController extends Controller {
     public function delete_rubric() {
         if ($this->id) {
             $id=explode(',',$this->id);
-            $case = new casesModel($id[0]);
+            $case = new caseModel($id[0]);
             if (!$this->checkRight($case))
                 return array('status'=>false,'message'=>'No right');
             $caser = new caserModel();
@@ -75,7 +75,7 @@ class caseController extends Controller {
 
     public function post_active() {
         if ($this->id) {
-            $case = new casesModel($this->id);
+            $case = new caseModel($this->id);
             if (!$this->checkRight($case))
                 return array('status'=>false,'message'=>'No right');
             $case->lastActivity = time();
@@ -86,7 +86,7 @@ class caseController extends Controller {
 
     public function post_name() {
         if ($this->id && $this->_getParam('name')) {
-            $case = new casesModel($this->id);
+            $case = new caseModel($this->id);
             if (!$this->checkRight($case))
                 return array('status'=>false,'message'=>'No right');
             $case->lastActivity = time();
@@ -102,11 +102,11 @@ class caseController extends Controller {
         $active = $this->_get_active();
 
         if (!$active) {
-            $case = new casesModel();
+            $case = new caseModel();
             $case->user32=Bootstrap::$main->getCurrentUser();
             $case->lastActivity = time();
         } else {
-            $case = new casesModel($active);
+            $case = new caseModel($active);
             if (!$this->checkRight($case))
                 return array('status'=>false,'message'=>'No right');
             $case->lastActivity = time();
@@ -119,7 +119,7 @@ class caseController extends Controller {
             return array('status'=>false,'message'=>'No rubric');
         }
 
-        $rubric=new rubricsModel();
+        $rubric=new rubricModel();
         $rub=$rubric->find_one_by_id32($this->data['rubric']);
 
         if (!$rub){
@@ -146,7 +146,7 @@ class caseController extends Controller {
 
 
     public function get_repertorize() {
-        $case = new casesModel($this->id);
+        $case = new caseModel($this->id);
         if (!$this->checkRight($case))
             return array('status'=>false,'message'=>'No right');
 

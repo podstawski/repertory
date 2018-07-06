@@ -1,0 +1,23 @@
+runtime: php55
+api_version: 1
+
+handlers:
+- url: /media
+  static_dir: media
+
+- url: /
+  static_files: index.html
+  upload: index.html
+  login: required
+  secure: always
+
+- url: /.+
+  script: api.php
+  login: required
+  secure: always
+
+skip_files:
+ - ^x/.*$
+ - ^migrate/.*$
+ - ^deploy.sh$
+

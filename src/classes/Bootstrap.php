@@ -1,4 +1,5 @@
 <?php
+use google\appengine\api\users\UserService;
 
 class Bootstrap extends Bootstrapbase {
 
@@ -11,7 +12,13 @@ class Bootstrap extends Bootstrapbase {
 
 
     public function getCurrentUser() {
-        $email = 'piotr.webkameleon.com';
+        $email = 'piotr@reseller.webkameleon.com';
+
+        if (isset($_SERVER['SERVER_SOFTWARE']) && strstr(strtolower($_SERVER['SERVER_SOFTWARE']),'engine')) {
+            $user = UserService::getCurrentUser();
+            $email=$user->email;
+        }
+
 
         return md5(str_replace('.','',strtolower($email)));
     }

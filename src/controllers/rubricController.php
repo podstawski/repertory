@@ -17,11 +17,20 @@ class rubricController extends Controller {
         sort($q);
 
         $token=implode(",",$q);
-        if ($result=Tools::memcache($token))
+        $result=Tools::memcache($token);
+        if ($result && !$this->_getParam('debug'))
             return array('status'=>true,'data'=>$result);
 
-        $model=new rubricsModel();
+        $model=new rubricModel();
         $result=$model->search($q);
+
+        if (is_array($result['results'])) foreach ($result['results'] AS &$r) {
+            foreach ($q AS $word) {
+                $r['pl'] = str_replace($word,"<b>$word</b>",$r['pl']);
+                $r['en'] = str_replace($word,"<b>$word</b>",$r['en']);
+            }
+
+        }
 
         return array('status'=>true,'data'=>Tools::memcache($token,$result));
   

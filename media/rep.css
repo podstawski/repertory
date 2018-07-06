@@ -134,6 +134,7 @@ div.repertory {
 
 table.repertory {
     border: 0;
+    width: auto;
 }
 
 table.repertory th {
@@ -151,6 +152,7 @@ table.repertory th div {
 table.repertory th > div > span {
     border-bottom: 1px solid #ccc;
     padding: 5px 10px;
+    font-weight: normal;
 }
 
 table.repertory td {
@@ -172,6 +174,7 @@ table.repertory #casename {
     padding: 0.6em;
     margin-top: 2em;
 }
+
 
 table.repertory td.score4 {
     background-color: darkblue;
