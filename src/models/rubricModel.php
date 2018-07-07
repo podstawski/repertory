@@ -4,7 +4,7 @@ class rubricModel extends Model {
 
 	public function search(Array $arrayQ,$maxResults=100) {
 
-	    $result=['total'=>0,'results'=>null];
+	    $result=['total'=>0,'results'=>null,'max'=>$maxResults];
 
 	    $against='';
 	    foreach ($arrayQ AS $q) {
@@ -25,6 +25,8 @@ class rubricModel extends Model {
         $result['total']=$this->conn->fetchOne($sql);
         if ($result['total']==0 || $result['total']>$maxResults)
             return $result;
+
+        $where.=" AND (rc>0 OR dr>0)";
 
 	    $sql="SELECT * FROM ".$this->_table." WHERE $where";
         $result['results']=$this->conn->fetchAll($sql);

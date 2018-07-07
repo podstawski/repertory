@@ -1,19 +1,21 @@
 const background="url(\"data:image/svg+xml;utf8," +
     "<svg xmlns='http://www.w3.org/2000/svg' version='1.1' height='30px' width='WIDTHpx'>" +
-    "<text x='1' y='20' fill='rgb(150,150,150)' font-size='20'>COUNT</text>" +
+    "<text x='1' y='20' fill='rgb(150,150,150)' font-size='16' font-family='Verdana'>COUNT</text>" +
     "</svg>\")";
 
 const NO_NAME_CASE = 'brak nazwy przypadku';
+const CLEAN_TIMEOUT = 500;
+const ADD_RUBRIC_TIMEOUT = 4000;
 
 var html_width=0;
 
 const clean=function(cb){
-    $('.results').fadeOut(1000,function () {
+    $('.results').fadeOut(CLEAN_TIMEOUT,function () {
         $('.results').html('').show();
         if (cb) cb();
     });
 
-    $('table.repertory').fadeOut(1000,function () {
+    $('table.repertory').fadeOut(CLEAN_TIMEOUT,function () {
         $('table.repertory').html('').show();
         html_width=$('html').width();
     });
@@ -83,25 +85,43 @@ const getSearchResults = function(e,q) {
             var count='0';
             if (data.data && data.data.total) {
                 count=data.data.total+'';
+                if (data.data.total > data.data.max) count+=' wyników, to za dużo';
+
             }
+            if (count=='0') count+=' wyników';
             q.css('background-image',background.replace('COUNT',count).replace('WIDTH',15*count.length));
 
             $('.results').html('');
             if (data.data && data.data.results) {
 
                 mvqInput2header(q);
+                var ids32=[];
 
                 var i=0;
 
                 var append = function () {
                     if (i>=data.data.results.length) {
                         status='waiting';
+                        oddEvenRubrics();
                         return;
                     }
-                    var evenodd=(i%2==1)?'even':'odd';
-                    var rec=data.data.results[i++];
 
-                    $('<div id="'+rec.id32+'" class="blank row '+evenodd+'"><div class="rubric col-md-10"><div class="pl">'+rec.pl+'</div><div class="en">'+rec.en+'</div></div><div class="rc col-md-2 hidden-xs">'+rec.rc+'</div></div>').appendTo('.results').fadeIn(100,append);
+                    var rec=data.data.results[i++];
+                    if (ids32.indexOf(rec.id32)==-1) {
+                        $('<div id="' + rec.id32 + '" class="blank row"><div class="rubric col-md-10"><div class="pl">' + rec.pl + '</div><div class="en">' + rec.en + '</div></div><div class="rc col-md-2 hidden-xs">' + rec.rc + '</div></div>').appendTo('.results').fadeIn(100, append);
+                        ids32.push(rec.id32);
+                    } else
+                        setTimeout(append,100);
+
+
+                    if (rec.dr) {
+                        for (var j=0; j<rec.dr.length; j++) {
+                            var rec2=rec.dr[j];
+                            if (ids32.indexOf(rec2.id32)!=-1)
+                                $('<div id="'+rec2.id32+'" class="blank row dr"><div class="rubric col-md-10"><div class="pl">'+rec2.pl+'</div><div class="en">'+rec2.en+'</div></div><div class="rc col-md-2 hidden-xs">'+rec2.rc+'</div></div>').appendTo('.results').fadeIn(100);
+                            ids32.push(rec2.id32);
+                        }
+                    }
 
                 }
                 append();
@@ -115,24 +135,37 @@ const getSearchResults = function(e,q) {
     });
 }
 
+const oddEvenRubrics = function(s) {
+    var i=0;
+    if (!s) s='.results .row';
+    $(s).each(function(){
+        const evenodd = (i++)%2==0?'odd':'even';
+        $(this).removeClass('odd').removeClass('even').addClass(evenodd);
+    });
+}
+
 const addRubricToCase = function(e) {
-    const total_animation_time = 5000;
+    const total_animation_time = ADD_RUBRIC_TIMEOUT;
     const start=Date.now();
     const element = $(this).closest('.row');
     const id=element.attr('id');
     const body = $('html, body');
 
-    var destination={width:1, height: element.height()*1.5, top: '3em', right: '2em','border-radius':'50%'};
+    if (element.find('.rc').text()=='0') {
+        element.effect( "shake" );
+        return;
+    }
+
+    var destination={width:1, height: element.height()*1.5, top: '3em', right: '5em','border-radius':'50%'};
     element.removeClass('row').addClass('animate').animate(destination,total_animation_time);
     element.find('*').fadeOut(total_animation_time);
-    var i=0;
-    $('.results .row').each(function(){
-        const evenodd = (i++)%2==0?'odd':'even';
-        $(this).removeClass('odd').removeClass('even').addClass(evenodd);
-    });
+
+    oddEvenRubrics();
     body.animate({scrollTop:0}, total_animation_time);
+
     $.post('case',{rubric:id},function(data){
         getCases(function(){
+
             const time_left=total_animation_time-(Date.now()-start);
             element.stop();
             body.stop();
@@ -237,8 +270,7 @@ const displayAllCases = function (e) {
         $.getJSON('case',function(cases){
 
             for (var i=0;i<cases.data.length; i++) {
-                var eo=(i%2)==0?'odd':'even';
-                var html='<div case="'+cases.data[i].id+'" class="data-row row '+eo+'">';
+                var html='<div case="'+cases.data[i].id+'" class="data-row row">';
                 html+='<div class="case confirm-text col-md-10">'+(cases.data[i].name||NO_NAME_CASE)+'</div>';
                 html+='<div class="rubrics col-md-1">'+cases.data[i].rubrics+'</div>';
                 html+='<div title="usuń" class="x col-md-1">';
@@ -246,6 +278,7 @@ const displayAllCases = function (e) {
                 html+='</div></div>';
                 $(html).appendTo($('.results'));
             }
+            oddEvenRubrics();
 
         });
     });

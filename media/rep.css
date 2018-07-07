@@ -93,11 +93,22 @@
     cursor: pointer;
 }
 
+.results .dr .rubric {
+    padding-left: 4.5em;
+}
+
 .results .rubric .pl {
     font-size: 1.7em;
 }
 .results .rubric .en {
     font-size: 1.1em;
+}
+
+.results .dr .rubric .pl {
+    font-size: 1.4em;
+}
+.results .dr .rubric .en {
+    font-size: 0.8em;
 }
 
 .results .rubric b {
