@@ -163,9 +163,18 @@ const addRubricToCase = function(e) {
         return;
     }
 
-    var destination={width:1, height: element.height()*1.5, top: '3em', right: '5em','border-radius':'50%'};
+    var destination={
+        width:1,
+        height: element.height()*1.5,
+        top: '3em',
+        right: '5em',
+        'border-radius':'50%',
+        'background-color': 'rgba(255,255,0,0.6)',
+        filter: 'blur(5px)'
+    };
     element.removeClass('row').addClass('animate').animate(destination,total_animation_time);
-    element.find('*').fadeOut(total_animation_time);
+    //element.find('*').fadeOut(total_animation_time);
+ 
 
     oddEvenRubrics();
     body.animate({scrollTop:0}, total_animation_time);
