@@ -223,3 +223,7 @@ table.repertory td a.x {
 table.repertory .row td {
     padding: 3px 8px;
 }
+
+body.thinking {
+    background-image: url("sq.gif");
+}

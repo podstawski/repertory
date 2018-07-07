@@ -9,6 +9,11 @@ const ADD_RUBRIC_TIMEOUT = 4000;
 
 var html_width=0;
 
+const thinking = function(yes) {
+    if (yes) $('body').addClass('thinking');
+    else $('body').removeClass('thinking');
+}
+
 const clean=function(cb){
     $('.results').fadeOut(CLEAN_TIMEOUT,function () {
         $('.results').html('').show();
@@ -24,6 +29,7 @@ const clean=function(cb){
 }
 
 const getCases = function (cb) {
+
     $.getJSON('case?limit=5',function(cases){
         $('.header .navi').html('<div class="more">&hellip;</div>');
 
@@ -80,8 +86,9 @@ const getSearchResults = function(e,q) {
     }
     status='getting';
     clean(function(){
+        thinking(true);
         $.getJSON('./rubric?q='+q.val(),function(data){
-
+            thinking(false);
             var count='0';
             if (data.data && data.data.total) {
                 count=data.data.total+'';
@@ -163,9 +170,10 @@ const addRubricToCase = function(e) {
     oddEvenRubrics();
     body.animate({scrollTop:0}, total_animation_time);
 
+    thinking(true);
     $.post('case',{rubric:id},function(data){
         getCases(function(){
-
+            thinking(false);
             const time_left=total_animation_time-(Date.now()-start);
             element.stop();
             body.stop();
@@ -220,7 +228,9 @@ const displayCase = function(e,caseId) {
     if (caseId) lastCaseId=caseId;
     else caseId=lastCaseId;
 
+    thinking(true);
     $.getJSON('case/repertorize/'+caseId,function(rep){
+        thinking(false);
         pushHistory('c='+caseId);
         getCases();
         const data=rep.data;
@@ -267,8 +277,9 @@ const changeCaseName = function(e) {
 
 const displayAllCases = function (e) {
     clean(function () {
+        thinking(true);
         $.getJSON('case',function(cases){
-
+            thinking(false);
             for (var i=0;i<cases.data.length; i++) {
                 var html='<div case="'+cases.data[i].id+'" class="data-row row">';
                 html+='<div class="case confirm-text col-md-10">'+(cases.data[i].name||NO_NAME_CASE)+'</div>';
