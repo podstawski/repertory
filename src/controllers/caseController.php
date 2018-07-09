@@ -2,10 +2,10 @@
 class caseController extends Controller {
     
 
-    public function get()
+    public function get($limit=null)
     {
         $case = new caseModel();
-        $cases = $case->select(['user32'=>Bootstrap::$main->getCurrentUser()],'lastActivity DESC', $this->_getParam('limit',0));
+        $cases = $case->select(['user32'=>Bootstrap::$main->getCurrentUser()],'lastActivity DESC', $limit?:$this->_getParam('limit',0));
         $caser = new caserModel();
 
         if (count($cases)>0) {
@@ -140,6 +140,7 @@ class caseController extends Controller {
 
         $ret['rubrics'] = $caser->count(['case'=>$case->id]);
 
+        $ret['cases']=$this->get(10);
         return array('status'=>true,'data'=>$ret);
 
     }
@@ -202,6 +203,7 @@ class caseController extends Controller {
         }
 
         $ret=['remedies'=>$all_remedies, 'rubrics'=>$rubrics, 'case'=>$case->data()];
+        $ret['cases']=$this->get(10);
         return array('status'=>true,'data'=>$ret);
     }
 

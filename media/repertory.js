@@ -15,30 +15,41 @@ const thinking = function(yes) {
 }
 
 const clean=function(cb){
-    $('.results').fadeOut(CLEAN_TIMEOUT,function () {
-        $('.results').html('').show();
-        if (cb) cb();
-    });
-
-    $('table.repertory').fadeOut(CLEAN_TIMEOUT,function () {
-        $('table.repertory').html('').show();
-        html_width=$('html').width();
-    });
+    if ($('.results').html().length>0)
+        $('.results').fadeOut(CLEAN_TIMEOUT,function () {
+            $('.results').html('').show();
+            if (cb) cb();
+        });
+    else if ($('table.repertory').html().length>0)
+        $('table.repertory').fadeOut(CLEAN_TIMEOUT,function () {
+            $('table.repertory').html('').show();
+            if (cb) cb();
+            html_width=$('html').width();
+        });
+    else if (cb) cb();
 
     mvqInput2header();
 }
 
-const getCases = function (cb) {
+const getCases = function (data,limit,cb) {
 
-    $.getJSON('case?limit=5',function(cases){
+    if (!limit) limit=5;
+    const display = function(cases) {
         $('.header .navi').html('<div class="more">&hellip;</div>');
 
-        for (var i=cases.data.length-1;i>=0; i--) {
+        let start=limit-1;
+        if (cases.data.length<limit) start=cases.data.length-1;
+        for (var i=start;i>=0; i--) {
             var a=cases.data[i].active?' class="active"':'';
             $('<div case="'+cases.data[i].id+'" class="case" title="'+(cases.data[i].name||NO_NAME_CASE)+'"><div'+a+'>'+cases.data[i].short+'</div><label>'+cases.data[i].rubrics+'</label></div>').appendTo($('.header .navi'));
         }
         if (cb) cb();
-    });
+    }
+
+    if (data)
+        display(data);
+    else
+        $.getJSON('case?limit='+limit,display);
 }
 
 const pushHistory = function(qs) {
@@ -64,6 +75,7 @@ var lastQ='';
 const getSearchResults = function(e,q) {
     if(!q) q=$(this);
 
+
     if(q.val().length<3) return;
 
     if (
@@ -79,6 +91,7 @@ const getSearchResults = function(e,q) {
     if (status!='waiting') return;
 
     pushHistory('q='+q.val());
+
 
     if(lastQ==q.val()) {
         status='waiting';
@@ -174,46 +187,51 @@ const addRubricToCase = function(e) {
     };
     element.removeClass('row').addClass('animate').animate(destination,total_animation_time);
     //element.find('*').fadeOut(total_animation_time);
- 
+
 
     oddEvenRubrics();
     body.animate({scrollTop:0}, total_animation_time);
 
     thinking(true);
     $.post('case',{rubric:id},function(data){
-        getCases(function(){
-            thinking(false);
-            const time_left=total_animation_time-(Date.now()-start);
-            element.stop();
-            body.stop();
-            const active = $('.header .navi .active');
-            const w2=$('.header .navi .active').width()/2;
-            element.css({left:element.offset().left, right:''});
+        thinking(false);
+        if (!data.status) {
+            alert(data.message);
+            return;
+        }
+        if (data.cases) getCases(data.cases);
 
-            body.animate({scrollTop:0}, time_left>0?time_left:10);
-            delete destination.right;
-            destination.top = Math.round(active.offset().top+w2);
-            destination.left = Math.round(active.offset().left+w2);
-            destination.height = 1;
+        const time_left=total_animation_time-(Date.now()-start);
+        element.stop();
+        body.stop();
+        const active = $('.header .navi .active');
+        const w2=$('.header .navi .active').width()/2;
+        element.css({left:element.offset().left, right:''});
 
-            element.animate(destination,time_left>0?time_left:10,function () {
-                element.hide();
-                active.css('background-color','rgba(255,255,0,0.5)');
-                const step=0.01;
+        body.animate({scrollTop:0}, time_left>0?time_left:10);
+        delete destination.right;
+        destination.top = Math.round(active.offset().top+w2);
+        destination.left = Math.round(active.offset().left+w2);
+        destination.height = 1;
 
-                var fade=function(){
-                    var color=active.css('background-color').split(',');
-                    var c3 = parseFloat(color[3]) - step;
-                    if (c3<0) c3=0;
-                    color[3]=c3+')';
-                    active.css('background-color',color.join(','));
+        element.animate(destination,time_left>0?time_left:10,function () {
+            element.hide();
+            active.css('background-color','rgba(255,255,0,0.5)');
+            const step=0.01;
 
-                    if (c3>0) setTimeout(fade,1/step);
-                }
-                setTimeout(fade,500);
-            });
+            var fade=function(){
+                var color=active.css('background-color').split(',');
+                var c3 = parseFloat(color[3]) - step;
+                if (c3<0) c3=0;
+                color[3]=c3+')';
+                active.css('background-color',color.join(','));
 
+                if (c3>0) setTimeout(fade,1/step);
+            }
+            setTimeout(fade,500);
         });
+
+
 
     });
 }
@@ -221,7 +239,7 @@ const addRubricToCase = function(e) {
 var lastCaseId = 0;
 
 const displayCase = function(e,caseId) {
-    clean();
+
 
     if (!caseId && this && $(this).length && $(this).length>0) {
         caseId=$(this).attr('case');
@@ -237,45 +255,49 @@ const displayCase = function(e,caseId) {
     if (caseId) lastCaseId=caseId;
     else caseId=lastCaseId;
 
-    thinking(true);
-    $.getJSON('case/repertorize/'+caseId,function(rep){
-        thinking(false);
-        pushHistory('c='+caseId);
-        getCases();
-        const data=rep.data;
+    clean(function() {
+        thinking(true);
+        $.getJSON('case/repertorize/'+caseId,function(rep){
+            thinking(false);
+            pushHistory('c='+caseId);
 
-        var tr='<tr><th colspan="2"><input id="casename" case="'+data.case.id+'" placeholder="Nazwa przypadku" value="'+(data.case.name?data.case.name:'')+'"/></th>';
-        for(var i=0; i<data.remedies.length; i++) {
-            tr+='<th><div><span>'+data.remedies[i].name+'</span></div></th>';
-        }
-        tr+='</tr>';
-        $('table.repertory').append(tr);
+            if (rep.data.cases) getCases(rep.data.cases,5);
+            const data=rep.data;
 
-        tr='<tr><td colspan="2"></td>';
-        for(var i=0; i<data.remedies.length; i++) {
-            tr+='<td class="score">'+data.remedies[i].score+'</td>';
-        }
-        tr+='</tr>';
-        $('table.repertory').append(tr);
-
-
-        for (var i=0;i<data.rubrics.length; i++) {
-            tr='<tr class="data-row">';
-            var a='<a data-toggle="modal" data-cb="displayCase" data-target="#confirm-delete" data-header="Rubryka" data-href="deleteRubric" data-id="'+caseId+','+data.rubrics[i].rubric+'" href="" class="x">x</a>';
-
-            tr+='<td>'+a+'<div class="pl confirm-text" title="'+data.rubrics[i].en+'">'+data.rubrics[i].pl+'</div></td>';
-            tr+='<td class="weight">'+data.rubrics[i].weight+'</td>';
-
-            for (var j=0; j<data.rubrics[i].remedies.length; j++) {
-                tr+='<td class="score'+data.rubrics[i].remedies[j]+'">'+'</td>';
+            var tr='<tr><th colspan="2"><input id="casename" case="'+data.case.id+'" placeholder="Nazwa przypadku" value="'+(data.case.name?data.case.name:'')+'"/></th>';
+            for(var i=0; i<data.remedies.length; i++) {
+                tr+='<th><div><span>'+data.remedies[i].name+'</span></div></th>';
             }
             tr+='</tr>';
             $('table.repertory').append(tr);
 
-        }
+            tr='<tr><td colspan="2"></td>';
+            for(var i=0; i<data.remedies.length; i++) {
+                tr+='<td class="score">'+data.remedies[i].score+'</td>';
+            }
+            tr+='</tr>';
+            $('table.repertory').append(tr);
 
-        $('div.repertory').width(html_width-20);
 
+            for (var i=0;i<data.rubrics.length; i++) {
+                tr='<tr class="data-row">';
+                var a='<a data-toggle="modal" data-cb="displayCase" data-target="#confirm-delete" data-header="Rubryka" data-href="deleteRubric" data-id="'+caseId+','+data.rubrics[i].rubric+'" href="" class="x">x</a>';
+
+                tr+='<td>'+a+'<div class="pl confirm-text" title="'+data.rubrics[i].en+'">'+data.rubrics[i].pl+'</div></td>';
+                tr+='<td class="weight">'+data.rubrics[i].weight+'</td>';
+
+                for (var j=0; j<data.rubrics[i].remedies.length; j++) {
+                    tr+='<td class="score'+data.rubrics[i].remedies[j]+'">'+'</td>';
+                }
+                tr+='</tr>';
+                $('table.repertory').append(tr);
+
+            }
+
+            if (html_width>500) $('div.repertory').width(html_width-20);
+            else $('div.repertory').width('100%');
+
+        });
     });
 }
 
@@ -284,7 +306,7 @@ const changeCaseName = function(e) {
     $.post('case/name/'+$(this).attr('case'),{name:$(this).val()});
 }
 
-const displayAllCases = function (e) {
+const displayAllCases = function (e,cb) {
     clean(function () {
         thinking(true);
         $.getJSON('case',function(cases){
@@ -298,6 +320,7 @@ const displayAllCases = function (e) {
                 html+='</div></div>';
                 $(html).appendTo($('.results'));
             }
+            if (cb) cb(cases);
             oddEvenRubrics();
 
         });
@@ -306,8 +329,10 @@ const displayAllCases = function (e) {
 }
 
 const refreshCases = function(){
-    displayAllCases();
-    getCases();
+    displayAllCases(function (cases) {
+        getCases(cases,5);
+    });
+
 }
 
 const deleteCase = function(caseId,cb) {
@@ -332,11 +357,10 @@ const deleteRubric = function (caseId, rubricId, cb) {
 
 $(function(){
     document.getElementById('q').focus();
-    getCases();
+    getCases(null,5);
 
     $('#q').keyup(getSearchResults);
     $('#q').click(getSearchResults);
-
 
 
     var url = new URL(window.location.href);
@@ -348,7 +372,6 @@ $(function(){
     }
 
     if (c) displayCase(null,c);
-
 
     $('#confirm-delete').on('show.bs.modal', function(e) {
         var self=$(this);
@@ -362,6 +385,7 @@ $(function(){
 
 $(document).on('click', '.results .rubric div', addRubricToCase);
 $(document).on('click', '.header .navi .case', displayCase);
+$(document).on('click', '.results .case', displayCase);
 $(document).on('change', '#casename', changeCaseName);
 $(document).on('keyup', '#casename', changeCaseName);
 $(document).on('click', '.header .navi .more', displayAllCases);
